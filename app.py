@@ -2,40 +2,31 @@ import joblib
 from fastapi import FastAPI
 from pydantic import BaseModel
 
-# 1. Initialize the FastAPI app
-app = FastAPI(
-    title="Spam Detection API", 
-    description="A simple API to classify text messages as Spam or Ham."
-)
+# Initialize FastAPI
+app = FastAPI(title="Spam Detection API")
 
-# 2. Define the input data structure
-class Message(BaseModel):
+# Define what the incoming request data should look like
+class MessageInput(BaseModel):
     text: str
 
-# 3. Load your trained model and vectorizer 
-# (Make sure to export these as .pkl files from your notebook!)
-try:
-    model = joblib.load("spam_model.pkl")
-    vectorizer = joblib.load("vectorizer.pkl")
-except FileNotFoundError:
-    print("Please ensure 'spam_model.pkl' and 'vectorizer.pkl' are in the directory.")
+# Load the saved model and vectorizer we generated in Step 1
+model = joblib.load("spam_model.pkl")
+vectorizer = joblib.load("vectorizer.pkl")
 
 @app.get("/")
-def home():
-    return {"message": "Spam Detection API is running!"}
+def read_root():
+    return {"status": "API is online and ready!"}
 
-# 4. Create the prediction endpoint
 @app.post("/predict")
-def predict_spam(data: Message):
-    # Transform the incoming text using your vectorizer
-    transformed_text = vectorizer.transform([data.text])
+def predict_spam(input_data: MessageInput):
+    # 1. Convert the incoming string text into numerical features using the saved vectorizer
+    transformed_text = vectorizer.transform([input_data.text])
     
-    # Get the prediction (0 for Ham, 1 for Spam)
+    # 2. Run the transformed features through the saved Naive Bayes model
     prediction = model.predict(transformed_text)[0]
     
-    result = "Spam" if prediction == 1 else "Ham"
-    
+    # 3. Return the result as JSON
     return {
-        "text": data.text,
-        "classification": result
+        "input_message": input_data.text,
+        "prediction": str(prediction)  # Will return your label (e.g., 'spam' or 'ham')
     }
