@@ -18,15 +18,23 @@ def read_root():
     return {"status": "API is online and ready!"}
 
 @app.post("/predict")
+@app.post("/predict")
 def predict_spam(input_data: MessageInput):
-    # 1. Convert the incoming string text into numerical features using the saved vectorizer
+    # 1. Convert incoming text to features
     transformed_text = vectorizer.transform([input_data.text])
     
-    # 2. Run the transformed features through the saved Naive Bayes model
+    # 2. Get numerical prediction
     prediction = model.predict(transformed_text)[0]
     
-    # 3. Return the result as JSON
+    # 3. Map numerical prediction to human-readable text
+    # (If your dataset mapped 1 to spam, keep it like this. If it mapped 'spam' directly, check your data format)
+    if str(prediction) == "1" or str(prediction).lower() == "spam":
+        result = "Spam"
+    else:
+        result = "Ham"
+    
+    # 4. Return clean JSON
     return {
         "input_message": input_data.text,
-        "prediction": str(prediction)  # Will return your label (e.g., 'spam' or 'ham')
+        "prediction": result
     }
